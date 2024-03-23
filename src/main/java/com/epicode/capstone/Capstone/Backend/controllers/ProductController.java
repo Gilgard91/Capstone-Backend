@@ -1,5 +1,7 @@
 package com.epicode.capstone.Capstone.Backend.controllers;
 
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.epicode.capstone.Capstone.Backend.dto.ProductDTO;
 import com.epicode.capstone.Capstone.Backend.entities.Product;
 import com.epicode.capstone.Capstone.Backend.services.ProductService;
@@ -7,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -17,6 +20,7 @@ public class ProductController {
 
     @Autowired
     private ProductService productService;
+
 
 
     @GetMapping
@@ -33,8 +37,14 @@ public class ProductController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Product saveProduct(@RequestBody ProductDTO newProduct){
-        return this.productService.saveProduct(newProduct);
+    public ResponseEntity<Product> saveProduct(@RequestBody ProductDTO newProduct, @RequestHeader("Authorization") String token){
+
+        DecodedJWT jwt = JWT.decode(token.split(" ")[1]);
+        String tokenSub = jwt.getClaim("sub").asString();
+        if(!tokenSub.equals("admin@epichw.com")){
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(this.productService.saveProduct(newProduct));
     }
 
     @PutMapping("/{id}")
@@ -71,4 +81,6 @@ public class ProductController {
     public void deleteProduct(@PathVariable Long id){
         productService.findByIdAndDelete(id);
    }
+
+
 }
